@@ -1,4 +1,4 @@
-# API Keys
+.API Keys
 .api_key
 
 # Python
@@ -24,3 +24,4 @@ output.*
 arduino_code/
 .api_key
 .api_key
+.DS_Store
