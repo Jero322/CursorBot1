@@ -1,0 +1,8 @@
+body { font-family: system-ui, -apple-system, Roboto, 'Segoe UI', Arial; background:#f7f9fb; color:#111 }
+.container { max-width:900px; margin:28px auto; background:white; padding:20px; border-radius:8px; box-shadow:0 6px 18px rgba(0,0,0,0.06) }
+textarea { width:100%; min-height:80px; font-family: monospace; padding:8px }
+pre { background:#0b1220; color:#dff; padding:12px; white-space:pre-wrap; overflow:auto; max-height:400px }
+.buttons { margin-top:8px }
+button { margin-right:8px; padding:8px 12px }
+.hidden { display:none }
+#status { margin-top:12px; color:#444 }
