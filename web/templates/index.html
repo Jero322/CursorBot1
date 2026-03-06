@@ -24,7 +24,13 @@
 
       <div id="upload-form" class="hidden">
         <h3>Upload settings</h3>
-        <label>Port: <input id="port" placeholder="/dev/tty.usbmodem..." /></label>
+        <label>Port:
+          <select id="port-select">
+            <option value="">-- detecting ports... --</option>
+          </select>
+          <input id="port" placeholder="/dev/tty.usbmodem..." />
+          <button id="refresh-ports" type="button">Refresh</button>
+        </label>
         <label>Board FQBN: <input id="fqbn" placeholder="arduino:avr:uno" /></label>
         <button id="do-upload">Upload Now</button>
       </div>

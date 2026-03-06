@@ -14,7 +14,9 @@ const downloadBtn = document.getElementById('download');
 const uploadBtn = document.getElementById('upload');
 const statusEl = document.getElementById('status');
 const uploadForm = document.getElementById('upload-form');
+const portSelect = document.getElementById('port-select');
 const portInput = document.getElementById('port');
+const refreshPortsBtn = document.getElementById('refresh-ports');
 const fqbnInput = document.getElementById('fqbn');
 const doUploadBtn = document.getElementById('do-upload');
 
@@ -45,8 +47,48 @@ downloadBtn.addEventListener('click', () => {
   window.location = url;
 });
 
+async function loadPorts() {
+  portSelect.innerHTML = '<option value="">-- loading... --</option>';
+  try {
+    const res = await fetch('/api/ports');
+    const data = await res.json();
+    portSelect.innerHTML = '';
+    if (data.error) {
+      portSelect.innerHTML = `<option value="">${data.error}</option>`;
+      return;
+    }
+    if (!data.ports || data.ports.length === 0) {
+      portSelect.innerHTML = '<option value="">No boards detected — check USB</option>';
+      return;
+    }
+    data.ports.forEach(p => {
+      const label = p.name ? `${p.port} (${p.name})` : p.port;
+      const opt = new Option(label, p.port);
+      opt.dataset.fqbn = p.fqbn || '';
+      portSelect.appendChild(opt);
+    });
+    // Pre-fill the manual input and fqbn from first result
+    const first = data.ports[0];
+    portInput.value = first.port;
+    if (first.fqbn) fqbnInput.value = first.fqbn;
+  } catch (e) {
+    portSelect.innerHTML = `<option value="">Error: ${e.message}</option>`;
+  }
+}
+
+portSelect.addEventListener('change', () => {
+  const opt = portSelect.selectedOptions[0];
+  if (opt && opt.value) {
+    portInput.value = opt.value;
+    if (opt.dataset.fqbn) fqbnInput.value = opt.dataset.fqbn;
+  }
+});
+
+refreshPortsBtn.addEventListener('click', loadPorts);
+
 uploadBtn.addEventListener('click', () => {
   uploadForm.classList.remove('hidden');
+  loadPorts();
 });
 
 doUploadBtn.addEventListener('click', async () => {
