@@ -14,24 +14,29 @@
       <textarea id="prompt" placeholder="e.g. Move forward for 2 seconds"></textarea>
 
       <div class="buttons">
-        <button id="generate">Generate Code</button>
-        <button id="download" disabled>Download .ino</button>
-        <button id="upload" disabled>Upload to Board</button>
+        <button type="button" id="generate">Generate Code</button>
+        <button type="button" id="download" disabled>Download .ino</button>
+        <button type="button" id="upload">Upload to Board</button>
       </div>
 
       <h2>Generated Code</h2>
       <pre id="code">No code generated yet.</pre>
 
       <div id="upload-form" class="hidden">
-        <h3>Upload settings</h3>
-        <label>Port: <input id="port" placeholder="/dev/tty.usbmodem..." /></label>
-        <label>Board FQBN: <input id="fqbn" placeholder="arduino:avr:uno" /></label>
-        <button id="do-upload">Upload Now</button>
+        <h3>Upload to Arduino</h3>
+        <p class="hint">Connect your board via USB before opening this. If not detected: install <a href="https://arduino.github.io/arduino-cli/" target="_blank" rel="noopener">Arduino CLI</a>, run <code>arduino-cli core install arduino:avr</code>, then click Refresh.</p>
+        <label>Board: <select id="board-select"><option value="">— No boards detected —</option></select> <button type="button" id="refresh-boards">Refresh</button></label>
+        <div id="manual-inputs">
+          <p class="hint">Enter Port and FQBN (run <code>arduino-cli board list</code> in terminal to find these):</p>
+          <label>Port: <input id="port" placeholder="e.g. /dev/cu.usbmodem14101 (Mac) or COM3 (Windows)" /></label>
+          <label>FQBN: <input id="fqbn" placeholder="e.g. arduino:avr:uno for Arduino Uno" /></label>
+        </div>
+        <button type="button" id="do-upload">Upload to board</button>
       </div>
 
       <div id="status"></div>
     </div>
 
-    <script src="/static/main.js"></script>
+    <script src="/static/main.js?v=2"></script>
   </body>
 </html>

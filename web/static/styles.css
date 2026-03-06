@@ -4,5 +4,12 @@ textarea { width:100%; min-height:80px; font-family: monospace; padding:8px }
 pre { background:#0b1220; color:#dff; padding:12px; white-space:pre-wrap; overflow:auto; max-height:400px }
 .buttons { margin-top:8px }
 button { margin-right:8px; padding:8px 12px }
-.hidden { display:none }
-#status { margin-top:12px; color:#444 }
+.hidden { display: none !important; }
+#status { margin-top:12px; color:#444; white-space:pre-wrap }
+.hint { font-size:0.9em; color:#555; margin-bottom:8px }
+.hint code { background:#eee; padding:2px 6px; border-radius:4px; font-size:0.9em }
+.hint a { color:#06c }
+.manual-link { font-size:0.9em }
+#upload-form label { display:block; margin-top:8px }
+#board-select { min-width:280px; padding:6px }
+#manual-inputs label { margin-right:12px }

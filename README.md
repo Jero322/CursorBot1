@@ -102,4 +102,19 @@ python arduino_translator.py "When button on pin 7 is pressed, turn on LED on pi
 - ✅ Supports piping from stdin
 - ✅ Configurable OpenAI model
 - ✅ Secure API key handling
->>>>>>> d07cbba (Initial commit for CursorBot)
+
+## Web app (upload from CursorBot)
+
+Run the web UI and upload code to your board from the browser (no Arduino IDE needed):
+
+1. Install [Arduino CLI](https://arduino.github.io/arduino-cli/) and ensure `arduino-cli` is on your PATH.
+2. Start the app:
+   ```bash
+   source venv/bin/activate
+   python web/app.py
+   ```
+3. Open http://127.0.0.1:5000 in your browser.
+4. Enter a description, click **Generate Code**, then **Upload to Board**.
+5. Select your connected Arduino from the dropdown (or enter port and FQBN manually) and click **Upload to board**.
+
+Code is compiled and uploaded to the selected board from the app.
