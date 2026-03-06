@@ -6,6 +6,7 @@ import shutil
 import subprocess
 import logging
 import json
+import tempfile
 
 # Configure logging
 logging.basicConfig(
@@ -156,28 +157,37 @@ def api_upload():
             msg += " No Arduino boards detected. Check your USB connection."
         return jsonify({'error': msg}), 400
 
-    # arduino-cli expects a sketch folder; use the directory containing the .ino
-    sketch_dir = os.path.dirname(os.path.abspath(path))
+    # arduino-cli requires the sketch folder to have the same name as the .ino file.
+    # e.g. blink_led_20240101.ino must live in a folder called blink_led_20240101/
+    # We copy the file into a correctly-named temp folder before compiling.
+    abs_path = os.path.abspath(path)
+    sketch_name = os.path.splitext(os.path.basename(abs_path))[0]
 
     try:
-        compile_cmd = ['arduino-cli', 'compile', '--fqbn', fqbn, sketch_dir]
-        upload_cmd = ['arduino-cli', 'upload', '-p', port, '--fqbn', fqbn, sketch_dir]
+        with tempfile.TemporaryDirectory() as tmpdir:
+            sketch_dir = os.path.join(tmpdir, sketch_name)
+            os.makedirs(sketch_dir)
+            shutil.copy(abs_path, os.path.join(sketch_dir, os.path.basename(abs_path)))
+            log.info('sketch copied to temp dir: %s', sketch_dir)
 
-        log.info('compiling: %s', ' '.join(compile_cmd))
-        compile_proc = subprocess.run(compile_cmd, capture_output=True, text=True)
-        log.debug('compile stdout: %s', compile_proc.stdout)
-        log.debug('compile stderr: %s', compile_proc.stderr)
-        if compile_proc.returncode != 0:
-            log.error('compile failed (exit %d): %s', compile_proc.returncode, compile_proc.stderr)
-            return jsonify({'error': 'compile failed', 'output': compile_proc.stderr}), 500
+            compile_cmd = ['arduino-cli', 'compile', '--fqbn', fqbn, sketch_dir]
+            upload_cmd = ['arduino-cli', 'upload', '-p', port, '--fqbn', fqbn, sketch_dir]
 
-        log.info('uploading: %s', ' '.join(upload_cmd))
-        upload_proc = subprocess.run(upload_cmd, capture_output=True, text=True)
-        log.debug('upload stdout: %s', upload_proc.stdout)
-        log.debug('upload stderr: %s', upload_proc.stderr)
-        if upload_proc.returncode != 0:
-            log.error('upload failed (exit %d): %s', upload_proc.returncode, upload_proc.stderr)
-            return jsonify({'error': 'upload failed', 'output': upload_proc.stderr}), 500
+            log.info('compiling: %s', ' '.join(compile_cmd))
+            compile_proc = subprocess.run(compile_cmd, capture_output=True, text=True)
+            log.debug('compile stdout: %s', compile_proc.stdout)
+            log.debug('compile stderr: %s', compile_proc.stderr)
+            if compile_proc.returncode != 0:
+                log.error('compile failed (exit %d): %s', compile_proc.returncode, compile_proc.stderr)
+                return jsonify({'error': 'compile failed', 'output': compile_proc.stderr}), 500
+
+            log.info('uploading: %s', ' '.join(upload_cmd))
+            upload_proc = subprocess.run(upload_cmd, capture_output=True, text=True)
+            log.debug('upload stdout: %s', upload_proc.stdout)
+            log.debug('upload stderr: %s', upload_proc.stderr)
+            if upload_proc.returncode != 0:
+                log.error('upload failed (exit %d): %s', upload_proc.returncode, upload_proc.stderr)
+                return jsonify({'error': 'upload failed', 'output': upload_proc.stderr}), 500
 
         log.info('upload successful')
         return jsonify({'message': 'uploaded', 'compile': compile_proc.stdout, 'upload': upload_proc.stdout})
