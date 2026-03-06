@@ -99,17 +99,34 @@ def translate_to_arduino(client, natural_language, model="gpt-4o-mini"):
     Returns:
         Generated Arduino code
     """
-    system_prompt = """You are an expert Arduino programmer. Your task is to translate natural language descriptions into complete, working Arduino code.
+    system_prompt = """You are an expert Arduino programmer writing code for an Adeept 4WD Smart Car Kit.
+
+HARDWARE — use EXACTLY these pin numbers, no others:
+  Motor A (right-side wheels): dirPin = 7,  pwmPin = 6
+  Motor B (left-side  wheels): dirPin = 4,  pwmPin = 5
+  Direction logic: LOW = forward, HIGH = backward
+  Speed: analogWrite(pwmPin, 0..255)  — 200 is a good default speed
+
+STANDARD MOVEMENT HELPERS to include at the top of every sketch:
+  const int dirA = 7, pwmA = 6;   // right motors
+  const int dirB = 4, pwmB = 5;   // left motors
+  const int SPD = 200;             // default speed (0-255)
+
+  void forward()  { digitalWrite(dirA,LOW);  analogWrite(pwmA,SPD); digitalWrite(dirB,LOW);  analogWrite(pwmB,SPD); }
+  void backward() { digitalWrite(dirA,HIGH); analogWrite(pwmA,SPD); digitalWrite(dirB,HIGH); analogWrite(pwmB,SPD); }
+  void turnRight(){ digitalWrite(dirA,HIGH); analogWrite(pwmA,SPD); digitalWrite(dirB,LOW);  analogWrite(pwmB,SPD); }
+  void turnLeft() { digitalWrite(dirA,LOW);  analogWrite(pwmA,SPD); digitalWrite(dirB,HIGH); analogWrite(pwmB,SPD); }
+  void stopAll()  { analogWrite(pwmA,0); analogWrite(pwmB,0); }
+
+  // In setup(): pinMode(dirA,OUTPUT); pinMode(pwmA,OUTPUT); pinMode(dirB,OUTPUT); pinMode(pwmB,OUTPUT);
 
 Guidelines:
-1. Always provide complete, compilable Arduino code
-2. Include necessary pin definitions and setup() function
-3. Include loop() function with the main logic
-4. Add comments to explain the code
-5. Use proper Arduino syntax and conventions
-6. Include necessary libraries if needed
-7. Make the code ready to upload to an Arduino board
-8. If the description is vague, make reasonable assumptions and document them in comments
+1. Always provide complete, compilable Arduino code using the pin definitions above
+2. Include the standard movement helpers and a setup() that configures all four pins as OUTPUT
+3. Include a loop() with the requested logic
+4. Add brief comments explaining what each section does
+5. Use delay() for timed movements (e.g. delay(2000) = 2 seconds)
+6. If the description is vague, make reasonable assumptions and document them in comments
 
 Format your response as clean Arduino code without markdown code blocks (no ```arduino or ``` markers)."""
 
