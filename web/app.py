@@ -6,6 +6,7 @@ import shutil
 import subprocess
 import glob
 import logging
+import json
 
 # Allow importing arduino_translator from project root
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -35,6 +36,7 @@ def api_generate():
     data = request.get_json() or {}
     prompt = data.get('prompt', '').strip()
     model = data.get('model') or 'gpt-4o-mini'
+    logger.info('generate request: model=%s prompt=%r', model, prompt[:80])
     if not prompt:
         return jsonify({'error': 'Prompt is required'}), 400
 
@@ -42,8 +44,50 @@ def api_generate():
         client = get_openai_client()
         code = translate_to_arduino(client, prompt, model)
         filepath = save_code_to_file(code, prompt)
+        logger.info('generated code saved to %s', filepath)
         return jsonify({'code': code, 'filepath': filepath})
     except Exception as e:
+        logger.exception('generate failed')
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/ports')
+def api_ports():
+    """Return a list of connected Arduino boards/ports via arduino-cli."""
+    if shutil.which('arduino-cli') is None:
+        logger.warning('arduino-cli not found on PATH')
+        return jsonify({'error': 'arduino-cli not found on PATH'}), 500
+
+    try:
+        proc = subprocess.run(
+            ['arduino-cli', 'board', 'list', '--format', 'json'],
+            capture_output=True, text=True, timeout=10,
+        )
+        logger.debug('arduino-cli board list stdout: %s', proc.stdout)
+        logger.debug('arduino-cli board list stderr: %s', proc.stderr)
+
+        detected = []
+        if proc.stdout.strip():
+            raw = json.loads(proc.stdout)
+            # arduino-cli >= 0.35 wraps results under "detected_ports"
+            entries = raw.get('detected_ports', raw if isinstance(raw, list) else [])
+            for entry in entries:
+                port_info = entry.get('port') or entry
+                address = port_info.get('address') or port_info.get('label', '')
+                protocol = port_info.get('protocol', '')
+                boards = entry.get('matching_boards') or []
+                fqbn = boards[0].get('fqbn', '') if boards else ''
+                name = boards[0].get('name', '') if boards else ''
+                if address:
+                    detected.append({'port': address, 'protocol': protocol, 'fqbn': fqbn, 'name': name})
+
+        logger.info('found %d port(s): %s', len(detected), detected)
+        return jsonify({'ports': detected})
+    except subprocess.TimeoutExpired:
+        logger.error('arduino-cli board list timed out')
+        return jsonify({'error': 'arduino-cli timed out'}), 500
+    except Exception as e:
+        logger.exception('ports endpoint failed')
         return jsonify({'error': str(e)}), 500
 
 
@@ -162,11 +206,13 @@ def api_download():
     abs_path = os.path.abspath(path)
     allowed_dir = os.path.abspath(os.path.join(PROJECT_ROOT, 'arduino_code'))
     if not abs_path.startswith(allowed_dir):
+        logger.warning('download rejected for path outside allowed dir: %s', abs_path)
         return jsonify({'error': 'invalid path'}), 400
 
     if not os.path.exists(abs_path):
         return jsonify({'error': 'file not found'}), 404
 
+    logger.info('download: %s', abs_path)
     return send_file(abs_path, as_attachment=True)
 
 
@@ -222,8 +268,7 @@ def api_upload():
     # Arduino CLI expects a "sketch folder" whose name matches the main .ino file.
     # To make this work no matter how/where we saved the file, stage it into a
     # temporary sketch directory with matching names, then compile/upload from there.
-    script_root = PROJECT_ROOT
-    tmp_root = os.path.join(script_root, 'arduino_tmp')
+    tmp_root = os.path.join(PROJECT_ROOT, 'arduino_tmp')
     os.makedirs(tmp_root, exist_ok=True)
 
     base_name = os.path.splitext(os.path.basename(sketch_file))[0]

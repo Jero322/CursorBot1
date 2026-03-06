@@ -106,7 +106,6 @@
     var refreshBtn = document.getElementById('refresh-boards');
     if (refreshBtn) refreshBtn.addEventListener('click', loadBoards);
 
-
     if (doUploadBtn && boardSelect && portInput && fqbnInput && statusEl) {
       doUploadBtn.addEventListener('click', async function () {
         if (!lastFilepath) {
