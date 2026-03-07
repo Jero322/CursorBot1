@@ -7,36 +7,63 @@
     <link rel="stylesheet" href="/static/styles.css" />
   </head>
   <body>
-    <div class="container">
-      <h1>CursorBot — Arduino Translator</h1>
+    <header>
+      <div class="header-inner">
+        <span class="logo">🤖</span>
+        <div>
+          <h1>CursorBot</h1>
+          <p class="tagline">Arduino Code Translator</p>
+        </div>
+      </div>
+    </header>
 
-      <label for="prompt">Describe what you want the robot to do</label>
-      <textarea id="prompt" placeholder="e.g. Move forward for 2 seconds"></textarea>
-
-      <div class="buttons">
-        <button type="button" id="generate">Generate Code</button>
-        <button type="button" id="download" disabled>Download .ino</button>
-        <button type="button" id="upload">Upload to Board</button>
+    <main>
+      <div class="card prompt-card">
+        <label for="prompt">Describe what you want your robot to do</label>
+        <textarea id="prompt" placeholder="e.g. Move forward for 2 seconds, turn left, then stop"></textarea>
+        <div class="buttons">
+          <button type="button" id="generate" class="btn btn-primary">&#9654; Generate Code</button>
+          <button type="button" id="download" class="btn btn-secondary" disabled>&#8595; Download .ino</button>
+          <button type="button" id="upload"   class="btn btn-secondary">&#8593; Upload to Board</button>
+        </div>
       </div>
 
-      <h2>Generated Code</h2>
-      <pre id="code">No code generated yet.</pre>
-
-      <div id="upload-form" class="hidden">
-        <h3>Upload to Arduino</h3>
-        <p class="hint">Connect your board via USB before opening this. If not detected: install <a href="https://arduino.github.io/arduino-cli/" target="_blank" rel="noopener">Arduino CLI</a>, run <code>arduino-cli core install arduino:avr</code>, then click Refresh.</p>
-        <label>Board: <select id="board-select"><option value="">— No boards detected —</option></select> <button type="button" id="refresh-boards">Refresh</button></label>
-        <div id="manual-inputs">
-          <p class="hint">Enter Port and FQBN (run <code>arduino-cli board list</code> in terminal to find these):</p>
-          <label>Port: <input id="port" placeholder="e.g. /dev/cu.usbmodem14101 (Mac) or COM3 (Windows)" /></label>
-          <label>FQBN: <input id="fqbn" placeholder="e.g. arduino:avr:uno for Arduino Uno" /></label>
+      <div class="card code-card">
+        <div class="code-header">
+          <span class="code-title">Generated Code</span>
+          <span class="code-lang">Arduino .ino</span>
         </div>
-        <button type="button" id="do-upload">Upload to board</button>
+        <pre id="code">// Your generated Arduino code will appear here...</pre>
+      </div>
+
+      <div id="upload-form" class="card upload-card hidden">
+        <h3>&#128268; Upload to Arduino</h3>
+        <p class="hint">Connect your board via USB first. If no port appears, install
+          <a href="https://arduino.github.io/arduino-cli/" target="_blank" rel="noopener">arduino-cli</a>
+          and run <code>arduino-cli core install arduino:avr</code>, then click Refresh.</p>
+
+        <div class="field">
+          <span class="field-label">Port</span>
+          <div class="input-row">
+            <select id="port-select"><option value="">— detecting... —</option></select>
+            <input id="port" type="text" placeholder="/dev/cu.usbserial-110" />
+            <button type="button" id="refresh-ports" class="btn btn-sm">&#8635; Refresh</button>
+          </div>
+        </div>
+
+        <div class="field">
+          <span class="field-label">Board FQBN</span>
+          <input id="fqbn" type="text" placeholder="arduino:avr:uno" />
+        </div>
+
+        <div class="upload-actions">
+          <button type="button" id="do-upload" class="btn btn-upload">&#9650; Upload Now</button>
+        </div>
       </div>
 
       <div id="status"></div>
-    </div>
+    </main>
 
-    <script src="/static/main.js?v=2"></script>
+    <script src="/static/main.js"></script>
   </body>
 </html>
