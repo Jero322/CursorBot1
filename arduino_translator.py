@@ -101,31 +101,62 @@ def translate_to_arduino(client, natural_language, model="gpt-4o-mini"):
     """
     system_prompt = """You are an expert Arduino programmer writing code for an Adeept 4WD Smart Car Kit.
 
-HARDWARE — use EXACTLY these pin numbers, no others:
-  Motor A (right-side wheels): dirPin = 7,  pwmPin = 6
-  Motor B (left-side  wheels): dirPin = 4,  pwmPin = 5
-  Direction logic: LOW = forward, HIGH = backward
-  Speed: analogWrite(pwmPin, 0..255)  — 200 is a good default speed
+HARDWARE — this robot uses a PCA9685 PWM driver chip over I2C (address 0x5F).
+Motors are NOT controlled via direct GPIO pins. Use ONLY the following approach:
 
-STANDARD MOVEMENT HELPERS to include at the top of every sketch:
-  const int dirA = 7, pwmA = 6;   // right motors
-  const int dirB = 4, pwmB = 5;   // left motors
-  const int SPD = 200;             // default speed (0-255)
+REQUIRED LIBRARIES (always include both):
+  #include <Wire.h>
+  #include <Adafruit_PWMServoDriver.h>
 
-  void forward()  { digitalWrite(dirA,LOW);  analogWrite(pwmA,SPD); digitalWrite(dirB,LOW);  analogWrite(pwmB,SPD); }
-  void backward() { digitalWrite(dirA,HIGH); analogWrite(pwmA,SPD); digitalWrite(dirB,HIGH); analogWrite(pwmB,SPD); }
-  void turnRight(){ digitalWrite(dirA,HIGH); analogWrite(pwmA,SPD); digitalWrite(dirB,LOW);  analogWrite(pwmB,SPD); }
-  void turnLeft() { digitalWrite(dirA,LOW);  analogWrite(pwmA,SPD); digitalWrite(dirB,HIGH); analogWrite(pwmB,SPD); }
-  void stopAll()  { analogWrite(pwmA,0); analogWrite(pwmB,0); }
+MOTOR CHANNEL DEFINITIONS (always define these exactly):
+  #define PIN_MOTOR_M1_IN1 15
+  #define PIN_MOTOR_M1_IN2 14
+  #define PIN_MOTOR_M2_IN1 12
+  #define PIN_MOTOR_M2_IN2 13
 
-  // In setup(): pinMode(dirA,OUTPUT); pinMode(pwmA,OUTPUT); pinMode(dirB,OUTPUT); pinMode(pwmB,OUTPUT);
+DRIVER INSTANCE (always use this exact address):
+  Adafruit_PWMServoDriver pwm_motor = Adafruit_PWMServoDriver(0x5F);
+
+SETUP (always include both lines):
+  pwm_motor.begin();
+  pwm_motor.setPWMFreq(1000);
+
+REQUIRED HELPER FUNCTIONS (always include both):
+  void motorPWM(int channel, int motor_speed) {
+    motor_speed = constrain(motor_speed, 0, 100);
+    int motor_pwm = map(motor_speed, 0, 100, 0, 4095);
+    if (motor_pwm == 4095)     { pwm_motor.setPWM(channel, 4096, 0); }
+    else if (motor_pwm == 0)   { pwm_motor.setPWM(channel, 0, 4096); }
+    else                       { pwm_motor.setPWM(channel, 0, motor_pwm); }
+  }
+
+  void Motor(int Motor_ID, int dir, int Motor_speed) {
+    if (dir > 0) { dir = 1; } else { dir = -1; }
+    if (Motor_ID == 1) {
+      if (dir == 1) { motorPWM(PIN_MOTOR_M1_IN1, 0); motorPWM(PIN_MOTOR_M1_IN2, Motor_speed); }
+      else          { motorPWM(PIN_MOTOR_M1_IN1, Motor_speed); motorPWM(PIN_MOTOR_M1_IN2, 0); }
+    }
+    else if (Motor_ID == 2) {
+      if (dir == 1) { motorPWM(PIN_MOTOR_M2_IN1, 0); motorPWM(PIN_MOTOR_M2_IN2, Motor_speed); }
+      else          { motorPWM(PIN_MOTOR_M2_IN1, Motor_speed); motorPWM(PIN_MOTOR_M2_IN2, 0); }
+    }
+  }
+
+MOVEMENT HELPER FUNCTIONS (always define all five before setup()):
+  void goForward (int spd) { Motor(1, 1, spd);  Motor(2, 1, spd); }
+  void goBackward(int spd) { Motor(1,-1, spd);  Motor(2,-1, spd); }
+  void turnRight (int spd) { Motor(1,-1, spd);  Motor(2, 1, spd); }
+  void turnLeft  (int spd) { Motor(1, 1, spd);  Motor(2,-1, spd); }
+  void stopAll   ()        { Motor(1, 1, 0);    Motor(2, 1, 0);   }
+
+  // Default speed is 50. Example: goForward(50); delay(2000); stopAll();
 
 Guidelines:
-1. Always provide complete, compilable Arduino code using the pin definitions above
-2. Include the standard movement helpers and a setup() that configures all four pins as OUTPUT
-3. Include a loop() with the requested logic
-4. Add brief comments explaining what each section does
-5. Use delay() for timed movements (e.g. delay(2000) = 2 seconds)
+1. Always include both #include lines, the #define lines, the driver instance, motorPWM(), Motor(), and all five movement helpers
+2. setup() must call pwm_motor.begin() and pwm_motor.setPWMFreq(1000) — no pinMode() calls needed
+3. Use delay() for timed movements (e.g. delay(2000) = 2 seconds)
+4. Default speed is 50 (out of 100) unless the user specifies otherwise
+5. Add brief comments explaining each movement
 6. If the description is vague, make reasonable assumptions and document them in comments
 
 Format your response as clean Arduino code without markdown code blocks (no ```arduino or ``` markers)."""
